@@ -2,7 +2,7 @@ use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vector<T, const N: usize> {
-    data: [T; N],
+    pub data: [T; N],
 }
 
 impl<T, const N: usize> Vector<T, N> {

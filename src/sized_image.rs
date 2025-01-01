@@ -2,7 +2,7 @@
 pub struct SizedImage<Pixel> {
     width_log_2: u32,
     height_log_2: u32,
-    pixels: Vec<Pixel>,
+    pub pixels: Vec<Pixel>,
 }
 
 fn log2u32(mut i: u32) -> u32 {
@@ -47,5 +47,16 @@ impl<Pixel> SizedImage<Pixel> {
 
     pub fn index_of(&self, x: u32, y: u32) -> usize {
         ((1 << self.width_log_2) * y + x) as usize
+    }
+
+    pub fn width(&self) -> u32 {
+        1 << self.width_log_2
+    }
+    pub fn height(&self) -> u32 {
+        1 << self.height_log_2
+    }
+    pub fn store_data(&mut self, x: u32, y: u32, pixel: Pixel) {
+        let index = self.index_of(x, y);
+        self.pixels[index] = pixel;
     }
 }

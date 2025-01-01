@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use clap::Parser;
-use image::{ImageError, ImageReader};
+use image::{DynamicImage, ImageBuffer, ImageError, ImageReader, Rgba};
 use num::Complex;
 use sized_image::SizedImage;
 use vector::Vector;
@@ -43,6 +43,13 @@ fn main() {
     let image = get_image(&args.image).expect("failed to read image");
 
     println!("{image:?}");
+}
+
+fn write_image(file: &str, width: u32, height: u32, pixels: &[Cvec4]) -> Result<(), ImageError> {
+    let mut image = ImageBuffer::<Rgba<f32>, Vec<_>>::new(width, height);
+    let px = pixels.iter().flat_map(|x| x.data.map(|x| x.re));
+    image.iter_mut().zip(px).for_each(|(a, b)| *a = b);
+    DynamicImage::from(image).to_rgba8().save(file)
 }
 
 fn get_image(file: &str) -> Result<SizedImage<Cvec4>, ImageError> {
