@@ -1,10 +1,15 @@
 use std::fmt::Display;
 
 use clap::Parser;
-use image::{ImageError, ImageReader, Rgba};
+use image::{ImageError, ImageReader};
+use num::Complex;
 use sized_image::SizedImage;
+use vector::Vector;
 
 mod sized_image;
+mod vector;
+
+type Cvec4 = Vector<Complex<f32>, 4>;
 
 #[derive(clap::ValueEnum, Debug, Clone, Copy)]
 enum Kernel {
@@ -40,11 +45,15 @@ fn main() {
     println!("{image:?}");
 }
 
-fn get_image(file: &str) -> Result<SizedImage<Rgba<f32>>, ImageError> {
-    let black = Rgba::<f32>::from([0f32, 0f32, 0f32, 0f32]);
+fn get_image(file: &str) -> Result<SizedImage<Cvec4>, ImageError> {
+    let black = Cvec4::default();
     let image = ImageReader::open(file)?.decode()?;
     let (width, height) = (image.width(), image.height());
-    let pixels = image.to_rgba32f().pixels().copied().collect::<Vec<_>>();
+    let pixels = image
+        .to_rgba32f()
+        .pixels()
+        .map(|x| Cvec4::new(x.0.map(Into::into)))
+        .collect::<Vec<_>>();
 
-    Ok(SizedImage::<Rgba<f32>>::from(width, height, &pixels, black))
+    Ok(SizedImage::from(width, height, &pixels, black))
 }
