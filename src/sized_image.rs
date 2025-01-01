@@ -6,8 +6,9 @@ pub struct SizedImage<Pixel> {
 }
 
 fn log2u32(mut i: u32) -> u32 {
+    assert_ne!(i, 0);
     let mut size = 0;
-    while i > 0 {
+    while i != 1 {
         i >>= 1;
         size += 1;
     }
@@ -21,8 +22,6 @@ impl<Pixel> SizedImage<Pixel> {
     {
         let width_log_2 = log2u32(width);
         let height_log_2 = log2u32(height);
-        println!("width_log_2: {width_log_2}, height_log_2: {height_log_2}");
-        println!("width: {}, height: {}", 1 << width_log_2, 1 << height_log_2);
         SizedImage {
             width_log_2,
             height_log_2,
@@ -35,13 +34,7 @@ impl<Pixel> SizedImage<Pixel> {
         Pixel: Clone,
     {
         let mut s = SizedImage::new(width, height, init);
-        for i in 0..height {
-            for j in 0..width {
-                let index = s.index_of(j, i);
-                s.pixels[index] = pixels[(i * width + j) as usize].clone();
-            }
-        }
-
+        s.blit(width, height, pixels);
         s
     }
 
@@ -58,5 +51,26 @@ impl<Pixel> SizedImage<Pixel> {
     pub fn store_data(&mut self, x: u32, y: u32, pixel: Pixel) {
         let index = self.index_of(x, y);
         self.pixels[index] = pixel;
+    }
+
+    fn blit(&mut self, width: u32, height: u32, pixels: &[Pixel])
+    where
+        Pixel: Clone,
+    {
+        for i in 0..height {
+            for j in 0..width {
+                let index = self.index_of(j, i);
+                self.pixels[index] = pixels[(i * width + j) as usize].clone();
+            }
+        }
+    }
+
+    pub fn pad_to_new_size(&self, width: u32, height: u32, init: Pixel) -> SizedImage<Pixel>
+    where
+        Pixel: Clone,
+    {
+        let mut new_image = SizedImage::new(width, height, init);
+        new_image.blit(self.width(), self.height(), &self.pixels);
+        new_image
     }
 }

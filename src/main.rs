@@ -2,10 +2,12 @@ use std::fmt::Display;
 
 use clap::Parser;
 use image::{DynamicImage, ImageBuffer, ImageError, ImageReader, Rgba};
+use kernel::KernelGenerator;
 use num::Complex;
 use sized_image::SizedImage;
 use vector::Vector;
 
+mod kernel;
 mod sized_image;
 mod vector;
 
@@ -15,6 +17,15 @@ type Cvec4 = Vector<Complex<f32>, 4>;
 enum Kernel {
     Box,
     Gaussian,
+}
+
+impl Kernel {
+    fn to_gen(self) -> Box<dyn KernelGenerator> {
+        match self {
+            Kernel::Box => Box::new(kernel::BoxKernelGen {}),
+            Kernel::Gaussian => Box::new(kernel::GaussianKernelGen {}),
+        }
+    }
 }
 
 impl Display for Kernel {
@@ -40,9 +51,22 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let image = get_image(&args.image).expect("failed to read image");
+    let image = {
+        let i = get_image(&args.image).expect("failed to read image");
+        let w = i.width();
+        let h = i.height();
+        i.pad_to_new_size(w * 2, h * 2, Cvec4::default())
+    };
+    let kernel = match args.kernel_file {
+        Some(file) => get_image(&file)
+            .expect("failed to read kernel file")
+            .pad_to_new_size(image.width(), image.height(), Cvec4::default()),
+        None => kernel::generate_image(image.width(), image.height(), args.kernel.to_gen(), &args),
+    };
 
-    println!("{image:?}");
+    assert_eq!(image.width(), kernel.width());
+    assert_eq!(image.height(), kernel.height());
+
 }
 
 fn write_image(file: &str, width: u32, height: u32, pixels: &[Cvec4]) -> Result<(), ImageError> {
