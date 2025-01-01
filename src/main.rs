@@ -1,6 +1,10 @@
 use std::fmt::Display;
 
 use clap::Parser;
+use image::{ImageError, ImageReader, Rgba};
+use sized_image::SizedImage;
+
+mod sized_image;
 
 #[derive(clap::ValueEnum, Debug, Clone, Copy)]
 enum Kernel {
@@ -30,4 +34,17 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
+
+    let image = get_image(&args.image).expect("failed to read image");
+
+    println!("{image:?}");
+}
+
+fn get_image(file: &str) -> Result<SizedImage<Rgba<f32>>, ImageError> {
+    let black = Rgba::<f32>::from([0f32, 0f32, 0f32, 0f32]);
+    let image = ImageReader::open(file)?.decode()?;
+    let (width, height) = (image.width(), image.height());
+    let pixels = image.to_rgba32f().pixels().copied().collect::<Vec<_>>();
+
+    Ok(SizedImage::<Rgba<f32>>::from(width, height, &pixels, black))
 }
