@@ -4,8 +4,9 @@ use clap::Parser;
 use image::{DynamicImage, ImageBuffer, ImageError, ImageReader, Rgba};
 use kernel::KernelGenerator;
 use num::Complex;
-use sized_image::SizedImage;
+use sized_image::{SizedImage, TimeDomain};
 use vector::Vector;
+use fourier_transform::{fourier_transform, inverse_fourier_transform};
 
 mod fourier_transform;
 mod kernel;
@@ -55,13 +56,13 @@ struct Args {
 fn main() -> Result<(), &'static str> {
     let args = Args::parse();
 
-    let mut image = {
+    let image = {
         let i = get_image(&args.image).expect("failed to read image");
         let w = i.width();
         let h = i.height();
         i.pad_to_new_size(w * 2, h * 2, Cvec4::default())
     };
-    let mut kernel = match args.kernel_file {
+    let kernel = match args.kernel_file {
         Some(file) => get_image(&file)
             .expect("failed to read kernel file")
             .pad_to_new_size(image.width(), image.height(), Cvec4::default()),
@@ -71,14 +72,14 @@ fn main() -> Result<(), &'static str> {
     assert_eq!(image.width(), kernel.width());
     assert_eq!(image.height(), kernel.height());
 
-    fourier_transform::fourier_transform(&mut image, false)?;
-    fourier_transform::fourier_transform(&mut kernel, false)?;
+    let mut image = fourier_transform(image)?;
+    let kernel = fourier_transform(kernel)?;
 
     for (im, krn) in image.pixels.iter_mut().zip(kernel.pixels.iter()) {
         *im = (*im) / (*krn);
     }
 
-    fourier_transform::fourier_transform(&mut image, true)?;
+    let image = inverse_fourier_transform(image)?;
 
     write_image(&args.output, image.width(), image.height(), &image.pixels)
         .expect("failed to write image");
@@ -93,7 +94,7 @@ fn write_image(file: &str, width: u32, height: u32, pixels: &[Cvec4]) -> Result<
     DynamicImage::from(image).to_rgba8().save(file)
 }
 
-fn get_image(file: &str) -> Result<SizedImage<Cvec4>, ImageError> {
+fn get_image(file: &str) -> Result<SizedImage<Cvec4, TimeDomain>, ImageError> {
     let black = Cvec4::default();
     let image = ImageReader::open(file)?.decode()?;
     let (width, height) = (image.width(), image.height());

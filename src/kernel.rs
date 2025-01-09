@@ -1,6 +1,6 @@
 use num::abs;
 
-use crate::{sized_image::SizedImage, Args, Cvec4};
+use crate::{sized_image::{SizedImage, TimeDomain}, Args, Cvec4};
 
 #[derive(Debug)]
 pub struct KernelConfig {
@@ -43,7 +43,7 @@ pub fn generate_image(
     height: u32,
     generator: Box<dyn KernelGenerator>,
     args: &Args,
-) -> SizedImage<Cvec4> {
+) -> SizedImage<Cvec4, TimeDomain> {
     let config = KernelConfig { size: args.size };
 
     let mut kernel = SizedImage::new(width, height, Cvec4::default());

@@ -2,7 +2,7 @@ use std::num::NonZero;
 
 use num::Complex;
 
-use crate::{sized_image::SizedImage, Cvec4};
+use crate::{sized_image::{Domain, FrequencyDomain, SizedImage, TimeDomain}, Cvec4};
 
 #[repr(u8)]
 #[derive(Debug)]
@@ -34,7 +34,17 @@ impl From<FourierTransformError> for &'static str {
     }
 }
 
-pub fn fourier_transform(image: &mut SizedImage<Cvec4>, inverse: bool) -> Result<(),FourierTransformError> {
+pub fn fourier_transform(mut image: SizedImage<Cvec4, TimeDomain>) -> Result<SizedImage<Cvec4, FrequencyDomain>, FourierTransformError> {
+    fourier_transform_raw(&mut image, false)?;
+    Ok(image.convert::<FrequencyDomain>())
+}
+
+pub fn inverse_fourier_transform(mut image: SizedImage<Cvec4, FrequencyDomain>) -> Result<SizedImage<Cvec4, TimeDomain>, FourierTransformError> {
+    fourier_transform_raw(&mut image, true)?;
+    Ok(image.convert::<TimeDomain>())
+}
+
+fn fourier_transform_raw<D: Domain>(image: &mut SizedImage<Cvec4, D>, inverse: bool) -> Result<(),FourierTransformError> {
     let ptr = image.pixels.as_mut_ptr() as _;
     let threads = std::thread::available_parallelism()
         .map(NonZero::get)

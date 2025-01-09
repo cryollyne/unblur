@@ -1,8 +1,17 @@
+use std::marker::PhantomData;
+
+pub trait Domain {}
+pub struct TimeDomain;
+impl Domain for TimeDomain {}
+pub struct FrequencyDomain;
+impl Domain for FrequencyDomain {}
+
 #[derive(Debug, Clone)]
-pub struct SizedImage<Pixel> {
+pub struct SizedImage<Pixel, D: Domain> {
     pub width_log_2: u32,
     pub height_log_2: u32,
     pub pixels: Vec<Pixel>,
+    _d: PhantomData<D>,
 }
 
 fn log2u32(mut i: u32) -> u32 {
@@ -15,8 +24,8 @@ fn log2u32(mut i: u32) -> u32 {
     size
 }
 
-impl<Pixel> SizedImage<Pixel> {
-    pub fn new(width: u32, height: u32, init: Pixel) -> SizedImage<Pixel>
+impl<Pixel, D: Domain> SizedImage<Pixel, D> {
+    pub fn new(width: u32, height: u32, init: Pixel) -> SizedImage<Pixel, D>
     where
         Pixel: Clone,
     {
@@ -26,10 +35,20 @@ impl<Pixel> SizedImage<Pixel> {
             width_log_2,
             height_log_2,
             pixels: vec![init; (1 << width_log_2) * (1 << height_log_2)],
+            _d: PhantomData{}
         }
     }
 
-    pub fn from(width: u32, height: u32, pixels: &[Pixel], init: Pixel) -> SizedImage<Pixel>
+    pub fn convert<New: Domain>(self) -> SizedImage<Pixel, New> {
+        SizedImage {
+            width_log_2: self.width_log_2,
+            height_log_2: self.height_log_2,
+            pixels: self.pixels,
+            _d: PhantomData{}
+        }
+    }
+
+    pub fn from(width: u32, height: u32, pixels: &[Pixel], init: Pixel) -> SizedImage<Pixel, D>
     where
         Pixel: Clone,
     {
@@ -65,7 +84,7 @@ impl<Pixel> SizedImage<Pixel> {
         }
     }
 
-    pub fn pad_to_new_size(&self, width: u32, height: u32, init: Pixel) -> SizedImage<Pixel>
+    pub fn pad_to_new_size(&self, width: u32, height: u32, init: Pixel) -> SizedImage<Pixel, D>
     where
         Pixel: Clone,
     {
