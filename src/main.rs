@@ -7,6 +7,7 @@ use num::Complex;
 use sized_image::SizedImage;
 use vector::Vector;
 
+mod fourier_transform;
 mod kernel;
 mod sized_image;
 mod vector;
@@ -45,19 +46,22 @@ struct Args {
     #[arg(short, long, default_value_t = 1f32)]
     size: f32,
 
+    #[arg(short, long, default_value_t = String::from("output.png"))]
+    output: String,
+
     image: String,
 }
 
-fn main() {
+fn main() -> Result<(), &'static str> {
     let args = Args::parse();
 
-    let image = {
+    let mut image = {
         let i = get_image(&args.image).expect("failed to read image");
         let w = i.width();
         let h = i.height();
         i.pad_to_new_size(w * 2, h * 2, Cvec4::default())
     };
-    let kernel = match args.kernel_file {
+    let mut kernel = match args.kernel_file {
         Some(file) => get_image(&file)
             .expect("failed to read kernel file")
             .pad_to_new_size(image.width(), image.height(), Cvec4::default()),
@@ -67,6 +71,19 @@ fn main() {
     assert_eq!(image.width(), kernel.width());
     assert_eq!(image.height(), kernel.height());
 
+    fourier_transform::fourier_transform(&mut image, false)?;
+    fourier_transform::fourier_transform(&mut kernel, false)?;
+
+    for (im, krn) in image.pixels.iter_mut().zip(kernel.pixels.iter()) {
+        *im = (*im) / (*krn);
+    }
+
+    fourier_transform::fourier_transform(&mut image, true)?;
+
+    write_image(&args.output, image.width(), image.height(), &image.pixels)
+        .expect("failed to write image");
+
+    Ok(())
 }
 
 fn write_image(file: &str, width: u32, height: u32, pixels: &[Cvec4]) -> Result<(), ImageError> {

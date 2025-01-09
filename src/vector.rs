@@ -1,6 +1,7 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Debug, Clone, Copy)]
+#[repr(C)]
 pub struct Vector<T, const N: usize> {
     pub data: [T; N],
 }

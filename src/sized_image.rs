@@ -1,7 +1,7 @@
 #[derive(Debug, Clone)]
 pub struct SizedImage<Pixel> {
-    width_log_2: u32,
-    height_log_2: u32,
+    pub width_log_2: u32,
+    pub height_log_2: u32,
     pub pixels: Vec<Pixel>,
 }
 
