@@ -1,8 +1,10 @@
 use std::marker::PhantomData;
 
 pub trait Domain {}
+#[derive(Debug, Clone)]
 pub struct TimeDomain;
 impl Domain for TimeDomain {}
+#[derive(Debug, Clone)]
 pub struct FrequencyDomain;
 impl Domain for FrequencyDomain {}
 

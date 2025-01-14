@@ -49,7 +49,6 @@ fn fourier_transform_raw<D: Domain>(image: &mut SizedImage<Cvec4, D>, inverse: b
     let threads = std::thread::available_parallelism()
         .map(NonZero::get)
         .unwrap_or(1) as _;
-    dbg!(format!("running fourier transform with {threads} threads"));
 
     let res = unsafe {
         fourier_transform_c_ffi(ptr, image.width_log_2, image.height_log_2, threads, inverse)
